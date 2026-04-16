@@ -25,22 +25,44 @@ const author = document.getElementById("author");
 const pages = document.getElementById("pages");
 const check = document.getElementById("check");
 
-//check the right input from forms and if its ok -> add the new book (object in array)
-//via Book function and start render function
 function submit() {
+  // Validate all fields (including author)
   if (
     title.value == null ||
-    title.value == "" ||
+    title.value.trim() == "" ||
+    author.value == null ||
+    author.value.trim() == "" ||
     pages.value == null ||
-    pages.value == ""
+    pages.value.trim() == ""
   ) {
-    alert("Please fill all fields!");
+    alert("Please fill all fields (Title, Author, Pages)!");
     return false;
-  } else {
-    let book = new Book(title.value, title.value, pages.value, check.checked);
-    library.push(book);
-    render();
   }
+
+  // Validate pages is a positive number
+  const pagesNum = parseInt(pages.value, 10);
+  if (isNaN(pagesNum) || pagesNum <= 0) {
+    alert("Please enter a valid number of pages!");
+    return false;
+  }
+
+  // FIX: use author.value instead of title.value for the second argument
+  let book = new Book(
+    title.value.trim(),
+    author.value.trim(),
+    pagesNum,
+    check.checked
+  );
+  myLibrary.push(book);  // FIX: was 'library.push'
+  render();
+
+  // Clear form fields for better UX
+  title.value = "";
+  author.value = "";
+  pages.value = "";
+  check.checked = false;
+
+  return true;
 }
 
 function Book(title, author, pages, check) {
@@ -52,52 +74,48 @@ function Book(title, author, pages, check) {
 
 function render() {
   let table = document.getElementById("display");
-  let rowsNumber = table.rows.length;
-  //delete old table
-  for (let n = rowsNumber - 1; n > 0; n-- {
-    table.deleteRow(n);
+
+  // Delete all rows except the header (row 0)
+  // FIX: missing ')' in original for-loop – replaced with while loop for clarity
+  while (table.rows.length > 1) {
+    table.deleteRow(1);
   }
-  //insert updated row and cells
-  let length = myLibrary.length;
-  for (let i = 0; i < length; i++) {
-    let row = table.insertRow(1);
+
+  // Re-populate table with current library
+  for (let i = 0; i < myLibrary.length; i++) {
+    let row = table.insertRow();  // appends at the end (preserves order)
+
     let titleCell = row.insertCell(0);
     let authorCell = row.insertCell(1);
     let pagesCell = row.insertCell(2);
     let wasReadCell = row.insertCell(3);
     let deleteCell = row.insertCell(4);
+
     titleCell.innerHTML = myLibrary[i].title;
     authorCell.innerHTML = myLibrary[i].author;
     pagesCell.innerHTML = myLibrary[i].pages;
 
-    //add and wait for action for read/unread button
+    // Read status toggle button
     let changeBut = document.createElement("button");
-    changeBut.id = i;
     changeBut.className = "btn btn-success";
-    wasReadCell.appendChild(changeBut);
-    let readStatus = "";
-    if (myLibrary[i].check == false) {
-      readStatus = "Yes";
-    } else {
-      readStatus = "No";
-    }
-    changeBut.innerText = readStatus;
-
+    // FIX: correct "Yes" when read, "No" when not read
+    changeBut.innerText = myLibrary[i].check ? "Yes" : "No";
     changeBut.addEventListener("click", function () {
       myLibrary[i].check = !myLibrary[i].check;
       render();
     });
+    wasReadCell.appendChild(changeBut);
 
-    //add delete button to every row and render again
+    // Delete button
     let delButton = document.createElement("button");
-    delBut.id = i + 5;
-    deleteCell.appendChild(delBut);
-    delBut.className = "btn btn-warning";
-    delBut.innerHTML = "Delete";
-    delBut.addEventListener("clicks", function () {
+    delButton.className = "btn btn-warning";
+    delButton.innerHTML = "Delete";
+    // FIX: event type 'click' (was 'clicks') and correct variable name
+    delButton.addEventListener("click", function () {
       alert(`You've deleted title: ${myLibrary[i].title}`);
       myLibrary.splice(i, 1);
       render();
     });
+    deleteCell.appendChild(delButton);
   }
 }
